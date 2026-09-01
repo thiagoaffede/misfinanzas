@@ -43,27 +43,39 @@ export default function RecurrentesPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr('');
-    await api(`/api/households/${activeId}/recurring`, {
-      method: 'POST',
-      body: JSON.stringify({ title, amount: parseFloat(amount), categoryId, dayOfMonth: parseInt(day) }),
-    });
-    setTitle('');
-    setAmount('');
-    await load();
+    try {
+      await api(`/api/households/${activeId}/recurring`, {
+        method: 'POST',
+        body: JSON.stringify({ title, amount: parseFloat(amount), categoryId, dayOfMonth: parseInt(day) }),
+      });
+      setTitle('');
+      setAmount('');
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al crear el gasto fijo');
+    }
   }
 
   async function toggle(r: Rec) {
-    await api(`/api/households/${activeId}/recurring`, {
-      method: 'PATCH',
-      body: JSON.stringify({ id: r.id, active: !r.active }),
-    });
-    load();
+    try {
+      await api(`/api/households/${activeId}/recurring`, {
+        method: 'PATCH',
+        body: JSON.stringify({ id: r.id, active: !r.active }),
+      });
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al actualizar');
+    }
   }
 
   async function del(id: string) {
     if (!confirm('¿Eliminar este gasto fijo?')) return;
-    await api(`/api/households/${activeId}/recurring?id=${id}`, { method: 'DELETE' });
-    load();
+    try {
+      await api(`/api/households/${activeId}/recurring?id=${id}`, { method: 'DELETE' });
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al eliminar');
+    }
   }
 
   if (!activeId) return null;
@@ -121,7 +133,7 @@ export default function RecurrentesPage() {
                 </div>
                 <span className="amt mono">{moneyBare(r.amount)}</span>
                 <button className="ghost" onClick={() => toggle(r)}>{r.active ? 'Pausar' : 'Reactivar'}</button>
-                <button className="ghost" onClick={() => del(r.id)}>✕</button>
+                <button className="ghost" aria-label={`Eliminar gasto fijo ${r.title}`} onClick={() => del(r.id)}>✕</button>
               </div>
             ))}
           </div>

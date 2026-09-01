@@ -27,11 +27,13 @@ export default function RegisterPage() {
 
       // crear el primer hogar
       const hname = household.trim() || 'Mi hogar';
-      await fetch('/api/households', {
+      const hr = await fetch('/api/households', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: hname }),
       });
+      const hbody = await hr.json().catch(() => ({}));
+      if (!hr.ok) throw new Error(hbody.error || 'No se pudo crear el hogar');
 
       window.location.href = '/app';
     } catch (e: any) {

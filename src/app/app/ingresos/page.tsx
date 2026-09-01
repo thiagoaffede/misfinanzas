@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@/components/store';
-import { moneyBare, fmtDate } from '@/lib/format';
+import { moneyBare, fmtDate, todayLocal } from '@/lib/format';
 
 type Cat = { id: string; name: string; type: string };
 type Income = {
@@ -24,7 +24,7 @@ export default function IngresosPage() {
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayLocal());
   const [err, setErr] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -70,8 +70,13 @@ export default function IngresosPage() {
 
   async function del(id: string) {
     if (!confirm('¿Eliminar este ingreso?')) return;
-    await api(`/api/households/${activeId}/incomes?incomeId=${id}`, { method: 'DELETE' });
-    load();
+    setErr('');
+    try {
+      await api(`/api/households/${activeId}/incomes?incomeId=${id}`, { method: 'DELETE' });
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al eliminar');
+    }
   }
 
   if (!activeId) return null;
@@ -133,7 +138,7 @@ export default function IngresosPage() {
                   </div>
                 </div>
                 <span className="amt pos mono">{moneyBare(x.amount)}</span>
-                <button className="ghost" onClick={() => del(x.id)}>✕</button>
+                <button className="ghost" aria-label={`Eliminar ingreso ${x.title}`} onClick={() => del(x.id)}>✕</button>
               </div>
             ))}
           </div>

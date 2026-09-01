@@ -14,7 +14,13 @@ export default function MiembrosPage() {
   const [newName, setNewName] = useState('');
 
   const current = households.find((h) => h.id === activeId);
-  const amAdmin = current?.members?.find((m) => m.user_id === (JSON.parse(localStorage.getItem('mf_user') || 'null') as any)?.id)?.role === 'admin';
+  let currentUserId: string | null = null;
+  try {
+    currentUserId = (JSON.parse(localStorage.getItem('mf_user') || 'null') as any)?.id || null;
+  } catch {
+    currentUserId = null;
+  }
+  const amAdmin = current?.members?.find((m) => m.user_id === currentUserId)?.role === 'admin';
 
   const load = useCallback(async () => {
     if (!activeId) return;
@@ -74,7 +80,7 @@ export default function MiembrosPage() {
             <div className="item" key={m.member_id}>
               <span className="ic">🙂</span>
               <div className="body">
-                <div className="title">{m.name} {amAdmin && m.role === 'admin' ? '' : ''}</div>
+                <div className="title">{m.name}</div>
                 <div className="meta">{m.email}</div>
               </div>
               <span className="tag">{m.role === 'admin' ? 'Admin' : 'Miembro'}</span>

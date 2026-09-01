@@ -30,22 +30,31 @@ export default function CategoriasPage() {
     e.preventDefault();
     setErr('');
     if (!name.trim()) return;
-    await api(`/api/households/${activeId}/categories`, {
-      method: 'POST',
-      body: JSON.stringify({ name, type }),
-    });
-    setName('');
-    load();
+    try {
+      await api(`/api/households/${activeId}/categories`, {
+        method: 'POST',
+        body: JSON.stringify({ name, type }),
+      });
+      setName('');
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al crear la categoría');
+    }
   }
 
   async function update() {
     if (!editing || !editing.name.trim()) return;
-    await api(`/api/households/${activeId}/categories`, {
-      method: 'PATCH',
-      body: JSON.stringify({ categoryId: editing.id, name: editing.name.trim() }),
-    });
-    setEditing(null);
-    load();
+    setErr('');
+    try {
+      await api(`/api/households/${activeId}/categories`, {
+        method: 'PATCH',
+        body: JSON.stringify({ categoryId: editing.id, name: editing.name.trim() }),
+      });
+      setEditing(null);
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al renombrar');
+    }
   }
 
   async function del(c: Cat) {
@@ -54,8 +63,13 @@ export default function CategoriasPage() {
       return;
     }
     if (!confirm(`¿Borrar "${c.name}"?`)) return;
-    await api(`/api/households/${activeId}/categories?categoryId=${c.id}`, { method: 'DELETE' });
-    load();
+    setErr('');
+    try {
+      await api(`/api/households/${activeId}/categories?categoryId=${c.id}`, { method: 'DELETE' });
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al eliminar');
+    }
   }
 
   if (!activeId) return null;
@@ -108,8 +122,8 @@ export default function CategoriasPage() {
                 <>
                   <span style={{ flex: 1, fontWeight: 600 }}>{c.name}</span>
                   {c.isDefault && <span className="tag gray">Default</span>}
-                  <button className="ghost" onClick={() => setEditing({ id: c.id, name: c.name })}>Renombrar</button>
-                  <button className="ghost" onClick={() => del(c)}>✕</button>
+                  <button className="ghost" aria-label={`Renombrar categoría ${c.name}`} onClick={() => setEditing({ id: c.id, name: c.name })}>Renombrar</button>
+                  <button className="ghost" aria-label={`Eliminar categoría ${c.name}`} onClick={() => del(c)}>✕</button>
                 </>
               )}
             </div>

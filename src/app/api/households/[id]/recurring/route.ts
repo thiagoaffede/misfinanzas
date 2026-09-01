@@ -29,7 +29,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const r = await db.query(
     `insert into recurring_expenses (household_id, title, amount, category_id, day_of_month, active)
      values ($1,$2,$3,$4,$5,$6) returning *`,
-    [id, title, amount, body.categoryId ? String(body.categoryId) : null, Number(body.dayOfMonth) || 1, body.active !== false]
+    [id, title, amount, body.categoryId ? String(body.categoryId) : null, Math.min(31, Math.max(1, Number(body.dayOfMonth) || 1)), body.active !== false]
   );
   return NextResponse.json({ ok: true, recurring: { ...r.rows[0], amount: Number(r.rows[0].amount) } });
 }

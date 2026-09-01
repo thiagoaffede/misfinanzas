@@ -1,4 +1,5 @@
 import { db, getPool } from './db';
+import { localDate } from './date';
 
 export type ExpenseInput = {
   householdId: string;
@@ -53,7 +54,7 @@ export async function createExpense(input: ExpenseInput) {
       const cr = await client.query('select type, cutoff_day from cards where id=$1', [input.cardId]);
       card = cr.rows[0] || null;
     }
-    const effectiveDate = computeEffectiveDate(input.paymentMethod, card, input.expenseDate || new Date().toISOString().slice(0, 10));
+    const effectiveDate = computeEffectiveDate(input.paymentMethod, card, input.expenseDate || localDate());
 
     const e = await client.query(
       `insert into expenses (household_id, category_id, title, amount, kind, payer_id, payment_method, card_id, installments, expense_date, effective_date, created_by)
@@ -68,7 +69,7 @@ export async function createExpense(input: ExpenseInput) {
         input.paymentMethod,
         input.cardId || null,
         input.installments > 0 ? input.installments : 1,
-        input.expenseDate || new Date().toISOString().slice(0, 10),
+        input.expenseDate || localDate(),
         effectiveDate,
         input.createdBy,
       ]

@@ -18,8 +18,14 @@ export default function DeudasPage() {
     if (!activeId) return;
     setLoading(true);
     try {
-      const d = await api(`/api/households/${activeId}/debts`);
+      const [d, s] = await Promise.all([
+        api(`/api/households/${activeId}/debts`),
+        api(`/api/households/${activeId}/settlements`),
+      ]);
       setDebts(d.debts);
+      setSettlements(s.settlements || []);
+    } catch {
+      setErr('Error al cargar las deudas');
     } finally {
       setLoading(false);
     }
@@ -29,27 +35,18 @@ export default function DeudasPage() {
     load();
   }, [load]);
 
-  useEffect(() => {
-    if (!activeId) return;
-    api(`/api/households/${activeId}/debts`)
-      .then((d) => setDebts(d.debts))
-      .catch(() => {});
-    // settlements history
-    fetch(`/api/households/${activeId}/settlements`)
-      .then((r) => r.json())
-      .then((b) => setSettlements(b.settlements || []))
-      .catch(() => {});
-  }, [activeId, api]);
-
   async function pay(d: Debt) {
     setErr('');
-    await api(`/api/households/${activeId}/debts`, {
-      method: 'POST',
-      body: JSON.stringify({ fromMemberId: d.from_member_id, toMemberId: d.to_member_id, amount: d.amount, note }),
-    });
-    setNote('');
-    setSettlements([]);
-    load();
+    try {
+      await api(`/api/households/${activeId}/debts`, {
+        method: 'POST',
+        body: JSON.stringify({ fromMemberId: d.from_member_id, toMemberId: d.to_member_id, amount: d.amount, note }),
+      });
+      setNote('');
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al liquidar la deuda');
+    }
   }
 
   if (!activeId) return null;

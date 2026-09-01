@@ -18,7 +18,7 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
 }
 
 export async function signSession(u: SessionUser): Promise<string> {
-  return new SignJWT({ name: u.name })
+  return new SignJWT({ name: u.name, email: u.email })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(u.id)
     .setIssuedAt()

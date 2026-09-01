@@ -3,12 +3,13 @@ import { db } from '@/lib/db';
 import { requireUser } from '@/lib/session';
 import { requireMembership } from '@/lib/household';
 import { getDebts, round2 } from '@/lib/finance';
+import { localMonth } from '@/lib/date';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
   await requireMembership(user.id, id);
-  const month = new Date().toISOString().slice(0, 7);
+  const month = localMonth();
 
   const exp = await db.query(
     `select coalesce(sum(amount / nullif(installments,0)),0) as total from expenses

@@ -45,6 +45,8 @@ export default function TarjetasPage() {
   const [limitAmount, setLimitAmount] = useState('');
   const [last4, setLast4] = useState('');
 
+  const [err, setErr] = useState('');
+
   const load = useCallback(async () => {
     if (!activeId) return;
     setLoading(true);
@@ -53,6 +55,8 @@ export default function TarjetasPage() {
       setCards(c.cards);
       const d = await api(`/api/households/${activeId}/cards/dashboard`);
       setDash(d.cards);
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al cargar');
     } finally {
       setLoading(false);
     }
@@ -65,42 +69,62 @@ export default function TarjetasPage() {
   async function create(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    await api(`/api/households/${activeId}/cards`, {
-      method: 'POST',
-      body: JSON.stringify({
-        name,
-        type,
-        cutoffDay: parseInt(cutoffDay),
-        limitAmount: parseFloat(limitAmount),
-        last4: last4 || undefined,
-      }),
-    });
-    setName('');
-    setLast4('');
-    setLimitAmount('');
-    await load();
+    setErr('');
+    try {
+      await api(`/api/households/${activeId}/cards`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name,
+          type,
+          cutoffDay: parseInt(cutoffDay),
+          limitAmount: parseFloat(limitAmount),
+          last4: last4 || undefined,
+        }),
+      });
+      setName('');
+      setLast4('');
+      setLimitAmount('');
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al guardar la tarjeta');
+    }
   }
 
   async function toggle(c: Card) {
-    await api(`/api/households/${activeId}/cards`, {
-      method: 'PATCH',
-      body: JSON.stringify({ cardId: c.id, active: !c.active }),
-    });
-    load();
+    setErr('');
+    try {
+      await api(`/api/households/${activeId}/cards`, {
+        method: 'PATCH',
+        body: JSON.stringify({ cardId: c.id, active: !c.active }),
+      });
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al actualizar');
+    }
   }
 
   async function del(c: Card) {
     if (!confirm(`¿Eliminar la tarjeta "${c.name}"?`)) return;
-    await api(`/api/households/${activeId}/cards?cardId=${c.id}`, { method: 'DELETE' });
-    load();
+    setErr('');
+    try {
+      await api(`/api/households/${activeId}/cards?cardId=${c.id}`, { method: 'DELETE' });
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al eliminar');
+    }
   }
 
   async function markPaid(expenseId: string) {
-    await api(`/api/households/${activeId}/expenses`, {
-      method: 'PATCH',
-      body: JSON.stringify({ expenseId, markPaid: true }),
-    });
-    load();
+    setErr('');
+    try {
+      await api(`/api/households/${activeId}/expenses`, {
+        method: 'PATCH',
+        body: JSON.stringify({ expenseId, markPaid: true }),
+      });
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al marcar cuota');
+    }
   }
 
   if (!activeId) return null;
@@ -112,6 +136,7 @@ export default function TarjetasPage() {
       <div className="card" style={{ marginBottom: 20 }}>
         <h3>Nueva tarjeta</h3>
         <form className="form" onSubmit={create}>
+          {err && <p className="err">{err}</p>}
           <div className="field">
             <label>Nombre</label>
             <input className="input" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Ej: Visa de crédito, BNA débito" />
@@ -145,9 +170,25 @@ export default function TarjetasPage() {
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         {cards.map((c) => (
-          <span key={c.id} className={`chip ${c.active ? 'active' : ''}`} onClick={() => toggle(c)}>
+          <span
+            key={c.id}
+            className={`chip ${c.active ? 'active' : ''}`}
+            onClick={() => toggle(c)}
+            role="button"
+            tabIndex={0}
+            aria-pressed={c.active}
+            aria-label={`${c.name}${c.active ? '' : ' (pausada)'}. ${c.active ? 'Pausar' : 'Reactivar'}`}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(c); } }}
+          >
             {c.type === 'credit' ? '💳' : '🏦'} {c.name} {c.active ? '' : '(pausada)'}
-            <span onClick={(e) => { e.stopPropagation(); del(c); }} style={{ marginLeft: 4 }}>✕</span>
+            <span
+              onClick={(e) => { e.stopPropagation(); del(c); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); del(c); } }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Eliminar tarjeta ${c.name}`}
+              style={{ marginLeft: 4 }}
+            >✕</span>
           </span>
         ))}
       </div>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireUser } from '@/lib/session';
 import { requireMembership } from '@/lib/household';
+import { localDate } from '@/lib/date';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
@@ -35,7 +36,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       body.categoryId ? String(body.categoryId) : null,
       title,
       amount,
-      String(body.incomeDate || new Date().toISOString().slice(0, 10)),
+      String(body.incomeDate || localDate()),
       body.isRecurring ? true : false,
     ]
   );

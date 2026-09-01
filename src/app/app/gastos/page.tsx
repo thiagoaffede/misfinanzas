@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@/components/store';
-import { moneyBare, fmtDate } from '@/lib/format';
+import { moneyBare, fmtDate, todayLocal, monthLocal } from '@/lib/format';
 
 type Member = { member_id: string; user_id: string; name: string; email: string; role: string };
 type Cat = { id: string; name: string; type: string };
@@ -40,10 +40,10 @@ export default function GastosPage() {
   const [method, setMethod] = useState('cash');
   const [cardId, setCardId] = useState('');
   const [installments, setInstallments] = useState('1');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayLocal());
   const [err, setErr] = useState('');
   const [saving, setSaving] = useState(false);
-  const [monthFilter, setMonthFilter] = useState(new Date().toISOString().slice(0, 7));
+  const [monthFilter, setMonthFilter] = useState(monthLocal());
 
   const isCardMethod = method === 'debit' || method === 'credit';
   const selectedCard = cards.find((c) => c.id === cardId);
@@ -62,7 +62,7 @@ export default function GastosPage() {
       const expCats = c.categories.filter((x: Cat) => x.type === 'expense');
       setCats(expCats);
       setCategoryId((cur) => cur || expCats[0]?.id || '');
-      setPayerId((cur) => cur || 'individual');
+      setPayerId((cur) => cur || m.members[0]?.member_id || 'individual');
       setCards(cd.cards);
       setCardId((cur) => cur || cd.cards[0]?.id || '');
       setExpenses(e.expenses);
@@ -107,8 +107,13 @@ export default function GastosPage() {
 
   async function del(id: string) {
     if (!confirm('¿Eliminar este gasto?')) return;
-    await api(`/api/households/${activeId}/expenses?expenseId=${id}`, { method: 'DELETE' });
-    load();
+    setErr('');
+    try {
+      await api(`/api/households/${activeId}/expenses?expenseId=${id}`, { method: 'DELETE' });
+      await load();
+    } catch (e: any) {
+      setErr((e && e.message) || 'Error al eliminar');
+    }
   }
 
   if (!activeId) return null;
@@ -132,7 +137,11 @@ export default function GastosPage() {
             </div>
             <div className="field">
               <label>Tipo</label>
-              <select className="input" value={kind} onChange={(e) => setKind(e.target.value as any)}>
+              <select className="input" value={kind} onChange={(e) => {
+                const v = e.target.value as 'joint' | 'individual';
+                setKind(v);
+                setPayerId(v === 'individual' ? 'individual' : members[0]?.member_id || '');
+              }}>
                 <option value="joint">Conjunto (reparte)</option>
                 <option value="individual">Individual</option>
               </select>
@@ -234,7 +243,7 @@ export default function GastosPage() {
                   <div className="amt mono">{moneyBare(x.monthly)}{x.installments > 1 ? '/mes' : ''}</div>
                   {x.installments > 1 && <div className="meta">total {moneyBare(x.amount)}</div>}
                 </div>
-                <button className="ghost" onClick={() => del(x.id)}>✕</button>
+                <button className="ghost" aria-label={`Eliminar gasto ${x.title}`} onClick={() => del(x.id)}>✕</button>
               </div>
             ))}
           </div>
