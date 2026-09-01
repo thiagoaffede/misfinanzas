@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { errMsg } from '@/lib/format';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
@@ -22,9 +25,10 @@ export default function LoginPage() {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || 'Error');
       localStorage.setItem('mf_user', JSON.stringify({ id: body.id, name: body.name }));
-      window.location.href = '/app';
-    } catch (e: any) {
-      setErr(e.message || 'Error de inicio de sesión');
+      router.push('/app');
+      router.refresh();
+    } catch (e) {
+      setErr(errMsg(e, 'Error de inicio de sesión'));
     } finally {
       setLoading(false);
     }

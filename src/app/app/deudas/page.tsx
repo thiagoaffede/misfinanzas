@@ -2,25 +2,25 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@/components/store';
-import { moneyBare } from '@/lib/format';
+import { moneyBare, errMsg } from '@/lib/format';
 
 type Debt = { from_member_id: string; from_name: string; to_member_id: string; to_name: string; amount: number };
+type Settlement = { from_name: string; to_name: string; amount: number; paid_at: string };
 
 export default function DeudasPage() {
   const { activeId, api } = useStore();
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
-  const [settlements, setSettlements] = useState<any[]>([]);
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [note, setNote] = useState('');
   const [err, setErr] = useState('');
 
   const load = useCallback(async () => {
     if (!activeId) return;
-    setLoading(true);
     try {
       const [d, s] = await Promise.all([
-        api(`/api/households/${activeId}/debts`),
-        api(`/api/households/${activeId}/settlements`),
+        api<{ debts: Debt[] }>(`/api/households/${activeId}/debts`),
+        api<{ settlements: Settlement[] }>(`/api/households/${activeId}/settlements`),
       ]);
       setDebts(d.debts);
       setSettlements(s.settlements || []);
@@ -32,7 +32,7 @@ export default function DeudasPage() {
   }, [activeId, api]);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => load());
   }, [load]);
 
   async function pay(d: Debt) {
@@ -44,8 +44,8 @@ export default function DeudasPage() {
       });
       setNote('');
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al liquidar la deuda');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al liquidar la deuda'));
     }
   }
 
@@ -90,7 +90,7 @@ export default function DeudasPage() {
               <tr><th>Pagó</th><th>Recibió</th><th>Monto</th><th>Fecha</th></tr>
             </thead>
             <tbody>
-              {settlements.map((s: any, i: number) => (
+              {settlements.map((s, i) => (
                 <tr key={i}>
                   <td>{s.from_name}</td>
                   <td>{s.to_name}</td>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@/components/store';
-import { moneyBare } from '@/lib/format';
+import { moneyBare, errMsg } from '@/lib/format';
 
 type Cat = { id: string; name: string; type: string };
 type Rec = { id: string; title: string; amount: number; category_name: string | null; day_of_month: number; active: boolean };
@@ -21,11 +21,10 @@ export default function RecurrentesPage() {
 
   const load = useCallback(async () => {
     if (!activeId) return;
-    setLoading(true);
     try {
       const [c, r] = await Promise.all([
-        api(`/api/households/${activeId}/categories`),
-        api(`/api/households/${activeId}/recurring`),
+        api<{ categories: Cat[] }>(`/api/households/${activeId}/categories`),
+        api<{ recurring: Rec[] }>(`/api/households/${activeId}/recurring`),
       ]);
       const expCats = c.categories.filter((x: Cat) => x.type === 'expense');
       setCats(expCats);
@@ -51,8 +50,8 @@ export default function RecurrentesPage() {
       setTitle('');
       setAmount('');
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al crear el gasto fijo');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al crear el gasto fijo'));
     }
   }
 
@@ -63,8 +62,8 @@ export default function RecurrentesPage() {
         body: JSON.stringify({ id: r.id, active: !r.active }),
       });
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al actualizar');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al actualizar'));
     }
   }
 
@@ -73,8 +72,8 @@ export default function RecurrentesPage() {
     try {
       await api(`/api/households/${activeId}/recurring?id=${id}`, { method: 'DELETE' });
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al eliminar');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al eliminar'));
     }
   }
 

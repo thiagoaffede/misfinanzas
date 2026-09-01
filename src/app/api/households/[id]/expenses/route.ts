@@ -3,6 +3,7 @@ import { requireUser } from '@/lib/session';
 import { requireMembership } from '@/lib/household';
 import { createExpense, listExpenses } from '@/lib/finance';
 import { db } from '@/lib/db';
+import { errMsg } from '@/lib/format';
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
@@ -35,8 +36,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       memberIds: Array.isArray(body.memberIds) ? body.memberIds : [],
     });
     return NextResponse.json({ ok: true, expense });
-  } catch (e: any) {
-    return NextResponse.json({ error: (e && e.message) || 'Error creando el gasto' }, { status: 400 });
+  } catch (e) {
+    return NextResponse.json({ error: errMsg(e, 'Error creando el gasto') }, { status: 400 });
   }
 }
 

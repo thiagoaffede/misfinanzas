@@ -19,8 +19,8 @@ export type ExpenseInput = {
 // Fecha del próximo cierre de tarjeta después de la fecha de compra
 function nextCutoff(expenseDate: string, cutoffDay: number): string {
   const d = new Date(expenseDate + 'T00:00:00');
-  let year = d.getFullYear();
-  let month = d.getMonth();
+  const year = d.getFullYear();
+  const month = d.getMonth();
   let cutoff = new Date(year, month, cutoffDay);
   if (d > cutoff) {
     cutoff = new Date(year, month + 1, cutoffDay);
@@ -113,10 +113,10 @@ export async function listExpenses(householdId: string, month?: string) {
   }
   sql += ` order by e.effective_date desc, e.created_at desc`;
   const r = await db.query(sql, params);
-  return r.rows.map((x: any) => ({
+  return r.rows.map((x: { installments: string; amount: string }) => ({
     ...x,
     amount: Number(x.amount),
-    monthly: x.installments > 1 ? round2(Number(x.amount) / x.installments) : Number(x.amount),
+    monthly: Number(x.installments) > 1 ? round2(Number(x.amount) / Number(x.installments)) : Number(x.amount),
   }));
 }
 
@@ -145,7 +145,7 @@ export async function getDebts(householdId: string): Promise<DebtRow[]> {
     [householdId]
   );
 
-  const nameById = new Map(members.rows.map((m: any) => [m.id, m.name]));
+  const nameById = new Map(members.rows.map((m: { id: string; name: string }) => [m.id, m.name]));
   const owes = new Map<string, number>();
   for (const row of r.rows) {
     if (row.payer_id && row.payer_id !== row.member_id) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@/components/store';
-import { moneyBare, fmtDate } from '@/lib/format';
+import { moneyBare, fmtDate, errMsg } from '@/lib/format';
 
 type Card = {
   id: string;
@@ -37,7 +37,6 @@ export default function TarjetasPage() {
   const { activeId, api } = useStore();
   const [cards, setCards] = useState<Card[]>([]);
   const [dash, setDash] = useState<CardDash[]>([]);
-  const [loading, setLoading] = useState(true);
 
   const [name, setName] = useState('');
   const [type, setType] = useState<'credit' | 'debit'>('credit');
@@ -49,21 +48,18 @@ export default function TarjetasPage() {
 
   const load = useCallback(async () => {
     if (!activeId) return;
-    setLoading(true);
     try {
-      const c = await api(`/api/households/${activeId}/cards`);
+      const c = await api<{ cards: Card[] }>(`/api/households/${activeId}/cards`);
       setCards(c.cards);
-      const d = await api(`/api/households/${activeId}/cards/dashboard`);
+      const d = await api<{ cards: CardDash[] }>(`/api/households/${activeId}/cards/dashboard`);
       setDash(d.cards);
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al cargar');
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      setErr(errMsg(e, 'Error al cargar'));
     }
   }, [activeId, api]);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => load());
   }, [load]);
 
   async function create(e: React.FormEvent) {
@@ -85,8 +81,8 @@ export default function TarjetasPage() {
       setLast4('');
       setLimitAmount('');
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al guardar la tarjeta');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al guardar la tarjeta'));
     }
   }
 
@@ -98,8 +94,8 @@ export default function TarjetasPage() {
         body: JSON.stringify({ cardId: c.id, active: !c.active }),
       });
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al actualizar');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al actualizar'));
     }
   }
 
@@ -109,8 +105,8 @@ export default function TarjetasPage() {
     try {
       await api(`/api/households/${activeId}/cards?cardId=${c.id}`, { method: 'DELETE' });
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al eliminar');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al eliminar'));
     }
   }
 
@@ -122,8 +118,8 @@ export default function TarjetasPage() {
         body: JSON.stringify({ expenseId, markPaid: true }),
       });
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al marcar cuota');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al marcar cuota'));
     }
   }
 
@@ -144,7 +140,7 @@ export default function TarjetasPage() {
           <div className="row">
             <div className="field">
               <label>Tipo</label>
-              <select className="input" value={type} onChange={(e) => setType(e.target.value as any)}>
+              <select className="input" value={type} onChange={(e) => setType(e.target.value as 'credit' | 'debit')}>
                 <option value="credit">Crédito</option>
                 <option value="debit">Débito</option>
               </select>

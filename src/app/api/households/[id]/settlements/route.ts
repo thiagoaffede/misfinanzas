@@ -15,5 +15,5 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
      where s.household_id=$1 order by s.paid_at desc, s.created_at desc`,
     [id]
   );
-  return NextResponse.json({ settlements: r.rows.map((x: any) => ({ ...x, amount: Number(x.amount) })) });
+  return NextResponse.json({ settlements: r.rows.map((x: { amount: string }) => ({ ...x, amount: Number(x.amount) })) });
 }

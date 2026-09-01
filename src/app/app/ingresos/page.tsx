@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@/components/store';
-import { moneyBare, fmtDate, todayLocal } from '@/lib/format';
+import { moneyBare, fmtDate, todayLocal, errMsg } from '@/lib/format';
 
 type Cat = { id: string; name: string; type: string };
 type Income = {
@@ -30,11 +30,10 @@ export default function IngresosPage() {
 
   const load = useCallback(async () => {
     if (!activeId) return;
-    setLoading(true);
     try {
       const [c, i] = await Promise.all([
-        api(`/api/households/${activeId}/categories`),
-        api(`/api/households/${activeId}/incomes`),
+        api<{ categories: Cat[] }>(`/api/households/${activeId}/categories`),
+        api<{ incomes: Income[] }>(`/api/households/${activeId}/incomes`),
       ]);
       const incCats = c.categories.filter((x: Cat) => x.type === 'income');
       setCats(incCats);
@@ -61,8 +60,8 @@ export default function IngresosPage() {
       setTitle('');
       setAmount('');
       await load();
-    } catch (e: any) {
-      setErr(e.message || 'Error al guardar');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al guardar'));
     } finally {
       setSaving(false);
     }
@@ -74,8 +73,8 @@ export default function IngresosPage() {
     try {
       await api(`/api/households/${activeId}/incomes?incomeId=${id}`, { method: 'DELETE' });
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al eliminar');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al eliminar'));
     }
   }
 

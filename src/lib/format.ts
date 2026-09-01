@@ -31,3 +31,13 @@ export const todayLocal = (d: Date = new Date()) => {
 };
 
 export const monthLocal = (d: Date = new Date()) => todayLocal(d).slice(0, 7);
+
+// Extrae un mensaje legible de un error desconocido (catch).
+export function errMsg(e: unknown, fallback = 'Error'): string {
+  if (e && typeof e === 'object' && 'message' in e) {
+    const m = (e as { message?: unknown }).message;
+    if (typeof m === 'string' && m) return m;
+  }
+  if (typeof e === 'string' && e) return e;
+  return fallback;
+}

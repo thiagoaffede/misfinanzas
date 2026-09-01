@@ -13,7 +13,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
      where r.household_id=$1 order by r.title`,
     [id]
   );
-  return NextResponse.json({ recurring: r.rows.map((x: any) => ({ ...x, amount: Number(x.amount) })) });
+  return NextResponse.json({ recurring: r.rows.map((x: { amount: string }) => ({ ...x, amount: Number(x.amount) })) });
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {

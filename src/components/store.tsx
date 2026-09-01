@@ -15,7 +15,7 @@ type Store = {
   ready: boolean;
   refresh: () => Promise<void>;
   setActive: (id: string) => void;
-  api: (path: string, opts?: RequestInit) => Promise<any>;
+  api: <T>(path: string, opts?: RequestInit) => Promise<T>;
 };
 
 const Ctx = createContext<Store>({} as Store);
@@ -30,12 +30,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
-  const api = useCallback(async (path: string, opts?: RequestInit) => {
+  const api = useCallback(async <T,>(path: string, opts?: RequestInit): Promise<T> => {
     const res = await fetch(path, {
       headers: { 'Content-Type': 'application/json' },
       ...opts,
     });
-    const body = await res.json().catch(() => ({}));
+    const body = (await res.json().catch(() => ({}))) as T & { error?: string };
     if (!res.ok) throw new Error(body.error || 'Error');
     return body;
   }, []);
@@ -58,11 +58,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUser(null);
       }
-      const data = await api('/api/households');
+      const data = await api<{ households: Household[] }>('/api/households');
       setHouseholds(data.households);
       const stored = typeof window !== 'undefined' ? localStorage.getItem('mf_active') : null;
       const first = data.households[0]?.id || null;
-      const chosen = data.households.some((h: any) => h.id === stored) ? stored : first;
+      const chosen = data.households.some((h) => h.id === stored) ? stored : first;
       setActiveId(chosen);
       if (chosen) localStorage.setItem('mf_active', chosen);
       setReady(true);
@@ -72,7 +72,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [api]);
 
   useEffect(() => {
-    refresh();
+    queueMicrotask(() => refresh());
   }, [refresh]);
 
   const setActive = useCallback((id: string) => {

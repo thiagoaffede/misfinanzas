@@ -14,7 +14,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
      where i.household_id=$1 order by i.income_date desc, i.created_at desc`,
     [id]
   );
-  return NextResponse.json({ incomes: r.rows.map((x: any) => ({ ...x, amount: Number(x.amount) })) });
+  return NextResponse.json({ incomes: r.rows.map((x: { amount: string }) => ({ ...x, amount: Number(x.amount) })) });
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {

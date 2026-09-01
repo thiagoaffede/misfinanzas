@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@/components/store';
+import { errMsg } from '@/lib/format';
 
 type Cat = { id: string; name: string; type: string; isDefault: boolean };
 
@@ -16,14 +17,18 @@ export default function CategoriasPage() {
 
   const load = useCallback(async () => {
     if (!activeId) return;
-    setLoading(true);
-    const c = await api(`/api/households/${activeId}/categories`);
-    setCats(c.categories);
-    setLoading(false);
+    try {
+      const c = await api<{ categories: Cat[] }>(`/api/households/${activeId}/categories`);
+      setCats(c.categories);
+    } catch {
+      setErr('Error al cargar las categorías');
+    } finally {
+      setLoading(false);
+    }
   }, [activeId, api]);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => load());
   }, [load]);
 
   async function create(e: React.FormEvent) {
@@ -37,8 +42,8 @@ export default function CategoriasPage() {
       });
       setName('');
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al crear la categoría');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al crear la categoría'));
     }
   }
 
@@ -52,8 +57,8 @@ export default function CategoriasPage() {
       });
       setEditing(null);
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al renombrar');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al renombrar'));
     }
   }
 
@@ -67,8 +72,8 @@ export default function CategoriasPage() {
     try {
       await api(`/api/households/${activeId}/categories?categoryId=${c.id}`, { method: 'DELETE' });
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al eliminar');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al eliminar'));
     }
   }
 

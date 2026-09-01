@@ -39,7 +39,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       [id, c.id, cutoffStr]
     );
 
-    const pendingRows = pending.rows.map((x: any) => {
+    const pendingRows = pending.rows.map((x: { id: string; title: string; amount: string; installments: string; paid_installments: string; effective_date: string }) => {
       const monthly = round2(Number(x.amount) / Number(x.installments));
       const missing = Number(x.installments) - Number(x.paid_installments);
       return {
@@ -56,8 +56,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
     const nextCutoffTotal = round2(
       pendingRows
-        .filter((x: any) => String(x.effective_date) <= cutoffStr)
-        .reduce((s: number, x: any) => s + x.monthly, 0)
+        .filter((x) => String(x.effective_date) <= cutoffStr)
+        .reduce((s, x) => s + x.monthly, 0)
     );
 
     result.push({

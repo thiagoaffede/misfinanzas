@@ -21,8 +21,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const activeHousehold = households.find((h) => h.id === activeId);
-
   useEffect(() => {
     if (ready && !user && typeof window !== 'undefined') {
       router.replace('/login');
@@ -32,7 +30,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     localStorage.removeItem('mf_user');
-    window.location.href = '/login';
+    router.replace('/login');
   }
 
   if (!ready) {

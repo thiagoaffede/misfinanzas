@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@/components/store';
-import { moneyBare, fmtDate, todayLocal, monthLocal } from '@/lib/format';
+import { moneyBare, fmtDate, todayLocal, monthLocal, errMsg } from '@/lib/format';
 
 type Member = { member_id: string; user_id: string; name: string; email: string; role: string };
 type Cat = { id: string; name: string; type: string };
@@ -50,13 +50,12 @@ export default function GastosPage() {
 
   const load = useCallback(async () => {
     if (!activeId) return;
-    setLoading(true);
     try {
       const [m, c, e, cd] = await Promise.all([
-        api(`/api/households/${activeId}/members`),
-        api(`/api/households/${activeId}/categories`),
-        api(`/api/households/${activeId}/expenses?month=${monthFilter}`),
-        api(`/api/households/${activeId}/cards`),
+        api<{ members: Member[] }>(`/api/households/${activeId}/members`),
+        api<{ categories: Cat[] }>(`/api/households/${activeId}/categories`),
+        api<{ expenses: Expense[] }>(`/api/households/${activeId}/expenses?month=${monthFilter}`),
+        api<{ cards: Card[] }>(`/api/households/${activeId}/cards`),
       ]);
       setMembers(m.members);
       const expCats = c.categories.filter((x: Cat) => x.type === 'expense');
@@ -98,8 +97,8 @@ export default function GastosPage() {
       setAmount('');
       setInstallments('1');
       await load();
-    } catch (e: any) {
-      setErr(e.message || 'Error al guardar');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al guardar'));
     } finally {
       setSaving(false);
     }
@@ -111,8 +110,8 @@ export default function GastosPage() {
     try {
       await api(`/api/households/${activeId}/expenses?expenseId=${id}`, { method: 'DELETE' });
       await load();
-    } catch (e: any) {
-      setErr((e && e.message) || 'Error al eliminar');
+    } catch (e) {
+      setErr(errMsg(e, 'Error al eliminar'));
     }
   }
 
@@ -207,7 +206,7 @@ export default function GastosPage() {
 
           {selectedCard && method === 'credit' && (
             <p style={{ fontSize: 13, margin: 0, color: 'var(--muted)' }}>
-              💡 Crédito: no impacta hoy, entra al próximo cierre de "<b>{selectedCard.name}</b>".
+              💡 Crédito: no impacta hoy, entra al próximo cierre de “<b>{selectedCard.name}</b>”.
             </p>
           )}
 
@@ -218,7 +217,7 @@ export default function GastosPage() {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h3 style={{ margin: 0 }}>Historial</h3>
-          <input type="month" className="input" style={{ width: 180 }} value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} />
+          <input type="month" className="input" style={{ width: 180 }} value={monthFilter} onChange={(e) => { setLoading(true); setMonthFilter(e.target.value); }} />
         </div>
         {loading ? (
           <p>Cargando…</p>

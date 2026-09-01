@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/components/store';
-import { moneyBare, MONTHS, fmtDate } from '@/lib/format';
+import { moneyBare, MONTHS } from '@/lib/format';
 
 type Dash = {
   month: string;
@@ -22,8 +22,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!activeId) return;
-    setLoading(true);
-    api(`/api/households/${activeId}/dashboard`)
+    api<Dash>(`/api/households/${activeId}/dashboard`)
       .then(setD)
       .catch(() => setD(null))
       .finally(() => setLoading(false));

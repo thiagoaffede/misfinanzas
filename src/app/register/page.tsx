@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { errMsg } from '@/lib/format';
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,9 +38,10 @@ export default function RegisterPage() {
       const hbody = await hr.json().catch(() => ({}));
       if (!hr.ok) throw new Error(hbody.error || 'No se pudo crear el hogar');
 
-      window.location.href = '/app';
-    } catch (e: any) {
-      setErr(e.message || 'Error al registrarse');
+      router.push('/app');
+      router.refresh();
+    } catch (e) {
+      setErr(errMsg(e, 'Error al registrarse'));
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@/components/store';
+import { errMsg } from '@/lib/format';
 
 type Member = { member_id: string; user_id: string; name: string; email: string; role: string };
 
@@ -16,7 +17,7 @@ export default function MiembrosPage() {
   const current = households.find((h) => h.id === activeId);
   let currentUserId: string | null = null;
   try {
-    currentUserId = (JSON.parse(localStorage.getItem('mf_user') || 'null') as any)?.id || null;
+    currentUserId = (JSON.parse(localStorage.getItem('mf_user') || 'null') as { id?: string } | null)?.id || null;
   } catch {
     currentUserId = null;
   }
@@ -24,12 +25,12 @@ export default function MiembrosPage() {
 
   const load = useCallback(async () => {
     if (!activeId) return;
-    const m = await api(`/api/households/${activeId}/members`);
+    const m = await api<{ members: Member[] }>(`/api/households/${activeId}/members`);
     setMembers(m.members);
   }, [activeId, api]);
 
   useEffect(() => {
-    load();
+    queueMicrotask(() => load());
   }, [load]);
 
   async function add(e: React.FormEvent) {
@@ -43,9 +44,9 @@ export default function MiembrosPage() {
       });
       setEmail('');
       setOk('Miembro agregado. Pedile que se registre con ese email y ya va a ver el hogar.');
-      load();
-    } catch (e: any) {
-      setErr(e.message || 'Error');
+      await load();
+    } catch (e) {
+      setErr(errMsg(e, 'Error'));
     }
   }
 

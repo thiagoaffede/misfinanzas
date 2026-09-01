@@ -39,7 +39,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     totalExpenses: round2(Number(exp.rows[0].total)),
     totalIncomes: round2(Number(inc.rows[0].total)),
     balance: round2(Number(inc.rows[0].total) - Number(exp.rows[0].total)),
-    byCategory: byCategory.rows.map((x: any) => ({ name: x.name, type: x.type, total: round2(Number(x.total)) })),
+    byCategory: byCategory.rows.map((x: { name: string; type: string; total: string }) => ({ name: x.name, type: x.type, total: round2(Number(x.total)) })),
     recurringMonthly: round2(Number(recurring.rows[0].total)),
     debts,
   });

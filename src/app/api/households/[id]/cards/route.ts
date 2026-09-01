@@ -3,16 +3,6 @@ import { db } from '@/lib/db';
 import { requireUser } from '@/lib/session';
 import { requireMembership } from '@/lib/household';
 
-type CardRow = {
-  id: string;
-  name: string;
-  type: string;
-  cutoff_day: number;
-  limit_amount: string;
-  last4: string | null;
-  active: boolean;
-};
-
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
