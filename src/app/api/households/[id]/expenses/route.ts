@@ -16,7 +16,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
-  const membership = await requireMembership(user.id, id);
+  await requireMembership(user.id, id);
   const body = await req.json().catch(() => ({}));
 
   try {
@@ -26,7 +26,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       title: String(body.title || ''),
       amount: Number(body.amount),
       kind: body.kind === 'individual' ? 'individual' : 'joint',
-      payerId: String(body.payerId || membership.member_id || '') || null,
+      payerId: !body.payerId || body.payerId === 'individual' ? null : String(body.payerId),
       paymentMethod: ['cash', 'transfer', 'debit', 'credit'].includes(body.paymentMethod) ? body.paymentMethod : 'cash',
       cardId: body.cardId ? String(body.cardId) : null,
       installments: Number(body.installments) || 1,
